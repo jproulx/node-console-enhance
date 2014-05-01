@@ -16,7 +16,7 @@ var tokens  = {
     'pid'      : process.pid,
     'filename' : function (stack) { return path.relative(process.cwd(), stack.getFileName()); },
     'line'     : function (stack) { return stack.getLineNumber(); },
-    'function'        : function (stack) { return stack.getFunctionName() || 'main'; }
+    'function' : function (stack) { return stack.getFunctionName() || 'main'; }
 };
 var format = '[{date}] {label} - {name}:{pid} - {filename}:{function}:{line} - {parameters}';
 /**
