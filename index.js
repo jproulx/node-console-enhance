@@ -7,18 +7,19 @@
  * @author  Jesse Proulx <github@jproulx.net>
  */
 "use strict";
-var util    = require('util');
-var console = require('console');
-var path    = require('path');
-var methods = 'info,log,warn,error'.split(',');
-var tokens  = {
+var util     = require('util');
+var console  = require('console');
+var path     = require('path');
+var methods  = 'info,log,warn,error'.split(',');
+var format   = '[{date}] {label} - {name}:{pid} - {filename}:{function}:{line} - {parameters}';
+var original = console.Console.prototype;
+var tokens   = {
     'date'     : function () { return new Date(); },
     'pid'      : process.pid,
     'filename' : function (stack) { return path.relative(process.cwd(), stack.getFileName()); },
     'line'     : function (stack) { return stack.getLineNumber(); },
     'function'        : function (stack) { return stack.getFunctionName() || 'main'; }
 };
-var format = '[{date}] {label} - {name}:{pid} - {filename}:{function}:{line} - {parameters}';
 /**
  * Returns a callsite at the correct position
  *
@@ -96,13 +97,13 @@ exports.enable = function (name, level) {
         error.message = util.format.apply(this, arguments);
         Error.captureStackTrace(error, this.trace);
         var output = util.format(error.stack);
-        console.Console.prototype.error.call(console, formatLogLine(output, name, 'trace', console.trace));
+        original.error.call(this, formatLogLine(output, name, 'trace', this.trace));
     }.bind(console);
     console.dir = function (object) {
         var output = util.inspect(object, {
             customInspect: false
         });
-        console.Console.prototype.log.call(console, formatLogLine(output, name, 'dir', console.dir));
+        original.log.call(this, formatLogLine(output, name, 'dir', this.dir));
     }.bind(console);
     console.timeEnd = function (label) {
         var time = this._times[label];
@@ -110,13 +111,13 @@ exports.enable = function (name, level) {
             throw new Error('No such label: ' + label);
         }
         var duration = Date.now() - time;
-        console.Console.prototype.log.call(console, formatLogLine(util.format('%s: %dms', label, duration), name, 'timeEnd', console.timeEnd));
+        original.log.call(this, formatLogLine(util.format('%s: %dms', label, duration), name, 'timeEnd', this.timeEnd));
     }.bind(console);
     methods.forEach(function override(method) {
         console[method] = function () {
             var parameters = util.format.apply(this, arguments);
             if (methods.indexOf(method) >= index) {
-                return console.Console.prototype[method].call(console, formatLogLine(parameters, name, method, console[method]));
+                return original[method].call(this, formatLogLine(parameters, name, method, this[method]));
             }
         }.bind(console);
     });
@@ -129,7 +130,7 @@ exports.enable = function (name, level) {
 exports.disable = function () {
     for (var method in console) {
         if (typeof console[method] == 'function' && method != 'Console') {
-            console[method] = console.Console.prototype[method].bind(console);
+            console[method] = original[method].bind(console);
         }
     }
 };
