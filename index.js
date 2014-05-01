@@ -18,7 +18,7 @@ var tokens   = {
     'pid'      : process.pid,
     'filename' : function (stack) { return path.relative(process.cwd(), stack.getFileName()); },
     'line'     : function (stack) { return stack.getLineNumber(); },
-    'function'        : function (stack) { return stack.getFunctionName() || 'main'; }
+    'function' : function (stack) { return stack.getFunctionName() || 'main'; }
 };
 /**
  * Returns a callsite at the correct position
